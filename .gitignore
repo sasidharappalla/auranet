@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+
+# Environment (keep .env.example and .env.production.example)
+.env
+.env.local
+.env.production
+
+# Build outputs
+.next/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+pgdata/
+minio_data/
+rabbitmq_data/
+
+# Vercel
+.vercel/
+
+# Lock files (optional — remove these lines if you want to track them)
+# package-lock.json
+# yarn.lock
