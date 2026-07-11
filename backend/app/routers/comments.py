@@ -8,14 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Comment, Post, User, CommentVote
+from app.models import Comment, Post, User
 from app.schemas import CommentCreate, CommentResponse, CommentEditRequest
 from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/posts/{post_id}/comments", tags=["comments"])
 
 
-def _build_comment_tree(comments: list[Comment], parent_id=None) -> list[CommentResponse]:
+def _build_comment_tree(
+    comments: list[Comment], parent_id=None
+) -> list[CommentResponse]:
     """Recursively build a nested comment tree from a flat list."""
     tree = []
     for comment in comments:
@@ -175,7 +177,10 @@ async def delete_comment(
     comment = result.scalar_one_or_none()
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
-    if comment.user_id != current_user.id and current_user.role not in ("admin", "moderator"):
+    if comment.user_id != current_user.id and current_user.role not in (
+        "admin",
+        "moderator",
+    ):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     comment.is_deleted = True

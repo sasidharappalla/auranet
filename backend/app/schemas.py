@@ -4,10 +4,11 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ── Auth & Users ───────────────────────────────────────────
+
 
 class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
@@ -21,6 +22,8 @@ class UserLogin(BaseModel):
 
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     username: str
     email: str
@@ -33,9 +36,6 @@ class UserResponse(BaseModel):
     status: str = "active"
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -44,6 +44,8 @@ class TokenResponse(BaseModel):
 
 
 class UserProfileResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     username: str
     display_name: Optional[str] = None
@@ -55,9 +57,6 @@ class UserProfileResponse(BaseModel):
     created_at: datetime
     post_count: int = 0
     comment_count: int = 0
-
-    class Config:
-        from_attributes = True
 
 
 class UserUpdateRequest(BaseModel):
@@ -74,6 +73,7 @@ class PasswordChangeRequest(BaseModel):
 
 # ── Communities ────────────────────────────────────────────
 
+
 class CommunityCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=50)
     description: str = ""
@@ -81,19 +81,18 @@ class CommunityCreate(BaseModel):
 
 
 class CommunityResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     name: str
     description: str
-    rules: Optional[list] = []
+    rules: Optional[list] = Field(default_factory=list)
     banner_url: Optional[str] = None
     icon_url: Optional[str] = None
     creator_id: Optional[UUID] = None
     is_private: bool = False
     member_count: int = 0
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class CommunityMemberResponse(BaseModel):
@@ -105,6 +104,7 @@ class CommunityMemberResponse(BaseModel):
 
 # ── Posts ──────────────────────────────────────────────────
 
+
 class PostCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=300)
     body: str = ""
@@ -115,6 +115,8 @@ class PostCreate(BaseModel):
 
 
 class PostResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     title: str
     body: str
@@ -140,11 +142,9 @@ class PostResponse(BaseModel):
     user_vote: Optional[int] = None
     is_saved: bool = False
 
-    class Config:
-        from_attributes = True
-
 
 # ── Comments ───────────────────────────────────────────────
+
 
 class CommentCreate(BaseModel):
     content: str = Field(..., min_length=1)
@@ -152,6 +152,8 @@ class CommentCreate(BaseModel):
 
 
 class CommentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     post_id: UUID
     user_id: UUID
@@ -164,10 +166,7 @@ class CommentResponse(BaseModel):
     author_username: Optional[str] = None
     author_avatar: Optional[str] = None
     user_vote: Optional[int] = None
-    replies: list["CommentResponse"] = []
-
-    class Config:
-        from_attributes = True
+    replies: list["CommentResponse"] = Field(default_factory=list)
 
 
 class CommentEditRequest(BaseModel):
@@ -175,6 +174,7 @@ class CommentEditRequest(BaseModel):
 
 
 # ── Votes ──────────────────────────────────────────────────
+
 
 class VoteCreate(BaseModel):
     vote_direction: int = Field(..., ge=-1, le=1)
@@ -194,6 +194,7 @@ class CommentVoteResponse(BaseModel):
 
 # ── Saved Posts ────────────────────────────────────────────
 
+
 class SavedPostResponse(BaseModel):
     id: UUID
     post_id: UUID
@@ -203,7 +204,10 @@ class SavedPostResponse(BaseModel):
 
 # ── Notifications ─────────────────────────────────────────
 
+
 class NotificationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     type: str
     message: str
@@ -214,15 +218,13 @@ class NotificationResponse(BaseModel):
     actor_avatar: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class NotificationCountResponse(BaseModel):
     unread_count: int
 
 
 # ── Reports ────────────────────────────────────────────────
+
 
 class ReportCreate(BaseModel):
     post_id: Optional[UUID] = None
@@ -233,6 +235,8 @@ class ReportCreate(BaseModel):
 
 
 class ReportResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     reporter_id: UUID
     post_id: Optional[UUID] = None
@@ -243,11 +247,9 @@ class ReportResponse(BaseModel):
     status: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 # ── Mod Actions ────────────────────────────────────────────
+
 
 class ModActionCreate(BaseModel):
     action_type: str
@@ -258,6 +260,8 @@ class ModActionCreate(BaseModel):
 
 
 class ModActionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     moderator_id: UUID
     community_id: Optional[UUID] = None
@@ -268,13 +272,11 @@ class ModActionResponse(BaseModel):
     reason: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 # ── Search ─────────────────────────────────────────────────
 
+
 class SearchResults(BaseModel):
-    posts: list[PostResponse] = []
-    communities: list[CommunityResponse] = []
-    users: list[UserProfileResponse] = []
+    posts: list[PostResponse] = Field(default_factory=list)
+    communities: list[CommunityResponse] = Field(default_factory=list)
+    users: list[UserProfileResponse] = Field(default_factory=list)

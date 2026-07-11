@@ -6,7 +6,7 @@
 # 1. Clone and enter the project
 cd auranet
 
-# 2. Create your .env file (already done if you see .env)
+# 2. Create local credentials and replace every placeholder
 cp .env.example .env
 
 # 3. Start all services
@@ -16,8 +16,8 @@ docker-compose up --build
 # Frontend:     http://localhost:3000
 # API Docs:     http://localhost:8000/docs
 # API Health:   http://localhost:8000/health
-# MinIO Console: http://localhost:9003  (minioadmin / minioadmin123)
-# RabbitMQ:     http://localhost:15672  (auranet / auranet_secret)
+# MinIO Console: http://localhost:9003  (credentials from .env)
+# RabbitMQ:     http://localhost:15672  (credentials from .env)
 ```
 
 **Note:** If you use the older Docker, replace `docker compose` with `docker-compose`.

@@ -5,9 +5,12 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import User
-from app.schemas import SearchResults, PostResponse, CommunityResponse, UserProfileResponse
-from app.auth import get_current_user
+from app.schemas import (
+    SearchResults,
+    PostResponse,
+    CommunityResponse,
+    UserProfileResponse,
+)
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 
@@ -41,21 +44,32 @@ async def search_all(
         """)
         result = await db.execute(post_query, {"q": q, "limit": limit})
         for r in result.mappings().all():
-            results.posts.append(PostResponse(
-                id=r["id"], title=r["title"], body=r["body"],
-                image_url=r["image_url"], ai_roast=r["ai_roast"],
-                ai_status=r["ai_status"], score=r["score"],
-                is_nsfw=r["is_nsfw"], is_spoiler=r["is_spoiler"],
-                is_locked=r["is_locked"], is_pinned=r["is_pinned"],
-                flair=r["flair"],
-                created_at=r["created_at"], updated_at=r["updated_at"],
-                author_username=r["author_username"],
-                author_avatar=r["author_avatar"],
-                community_name=r["community_name"],
-                community_id=r["community_id"], user_id=r["user_id"],
-                upvotes=r["upvotes"], downvotes=r["downvotes"],
-                comment_count=r["comment_count"],
-            ))
+            results.posts.append(
+                PostResponse(
+                    id=r["id"],
+                    title=r["title"],
+                    body=r["body"],
+                    image_url=r["image_url"],
+                    ai_roast=r["ai_roast"],
+                    ai_status=r["ai_status"],
+                    score=r["score"],
+                    is_nsfw=r["is_nsfw"],
+                    is_spoiler=r["is_spoiler"],
+                    is_locked=r["is_locked"],
+                    is_pinned=r["is_pinned"],
+                    flair=r["flair"],
+                    created_at=r["created_at"],
+                    updated_at=r["updated_at"],
+                    author_username=r["author_username"],
+                    author_avatar=r["author_avatar"],
+                    community_name=r["community_name"],
+                    community_id=r["community_id"],
+                    user_id=r["user_id"],
+                    upvotes=r["upvotes"],
+                    downvotes=r["downvotes"],
+                    comment_count=r["comment_count"],
+                )
+            )
 
     if type in ("all", "communities"):
         comm_query = text("""
@@ -67,12 +81,19 @@ async def search_all(
         """)
         result = await db.execute(comm_query, {"q": q, "limit": limit})
         for r in result.mappings().all():
-            results.communities.append(CommunityResponse(
-                id=r["id"], name=r["name"], description=r["description"],
-                banner_url=r["banner_url"], icon_url=r["icon_url"],
-                creator_id=r["creator_id"], is_private=r["is_private"],
-                member_count=r["member_count"], created_at=r["created_at"],
-            ))
+            results.communities.append(
+                CommunityResponse(
+                    id=r["id"],
+                    name=r["name"],
+                    description=r["description"],
+                    banner_url=r["banner_url"],
+                    icon_url=r["icon_url"],
+                    creator_id=r["creator_id"],
+                    is_private=r["is_private"],
+                    member_count=r["member_count"],
+                    created_at=r["created_at"],
+                )
+            )
 
     if type in ("all", "users"):
         user_query = text("""
@@ -87,12 +108,18 @@ async def search_all(
         """)
         result = await db.execute(user_query, {"q": q, "limit": limit})
         for r in result.mappings().all():
-            results.users.append(UserProfileResponse(
-                id=r["id"], username=r["username"],
-                display_name=r["display_name"], avatar_url=r["avatar_url"],
-                banner_url=r["banner_url"], bio=r["bio"],
-                karma=r["karma"], role=r["role"],
-                created_at=r["created_at"],
-            ))
+            results.users.append(
+                UserProfileResponse(
+                    id=r["id"],
+                    username=r["username"],
+                    display_name=r["display_name"],
+                    avatar_url=r["avatar_url"],
+                    banner_url=r["banner_url"],
+                    bio=r["bio"],
+                    karma=r["karma"],
+                    role=r["role"],
+                    created_at=r["created_at"],
+                )
+            )
 
     return results

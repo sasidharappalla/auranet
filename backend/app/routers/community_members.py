@@ -1,9 +1,7 @@
 """Community membership endpoints — join, leave, list members."""
 
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -11,7 +9,9 @@ from app.models import CommunityMember, Community, User
 from app.schemas import CommunityMemberResponse
 from app.auth import get_current_user
 
-router = APIRouter(prefix="/api/communities/{community_name}/members", tags=["community_members"])
+router = APIRouter(
+    prefix="/api/communities/{community_name}/members", tags=["community_members"]
+)
 
 
 @router.get("/", response_model=list[CommunityMemberResponse])
@@ -22,7 +22,9 @@ async def list_members(
     db: AsyncSession = Depends(get_db),
 ):
     """List members of a community."""
-    comm_result = await db.execute(select(Community).where(Community.name == community_name))
+    comm_result = await db.execute(
+        select(Community).where(Community.name == community_name)
+    )
     community = comm_result.scalar_one_or_none()
     if not community:
         raise HTTPException(status_code=404, detail="Community not found")
@@ -55,7 +57,9 @@ async def join_community(
     current_user: User = Depends(get_current_user),
 ):
     """Join a community."""
-    comm_result = await db.execute(select(Community).where(Community.name == community_name))
+    comm_result = await db.execute(
+        select(Community).where(Community.name == community_name)
+    )
     community = comm_result.scalar_one_or_none()
     if not community:
         raise HTTPException(status_code=404, detail="Community not found")
@@ -91,7 +95,9 @@ async def leave_community(
     current_user: User = Depends(get_current_user),
 ):
     """Leave a community."""
-    comm_result = await db.execute(select(Community).where(Community.name == community_name))
+    comm_result = await db.execute(
+        select(Community).where(Community.name == community_name)
+    )
     community = comm_result.scalar_one_or_none()
     if not community:
         raise HTTPException(status_code=404, detail="Community not found")
@@ -107,7 +113,9 @@ async def leave_community(
         raise HTTPException(status_code=404, detail="Not a member")
 
     if member.role == "owner":
-        raise HTTPException(status_code=400, detail="Owner cannot leave. Transfer ownership first.")
+        raise HTTPException(
+            status_code=400, detail="Owner cannot leave. Transfer ownership first."
+        )
 
     await db.delete(member)
     community.member_count = max(0, community.member_count - 1)
@@ -122,7 +130,9 @@ async def membership_status(
     current_user: User = Depends(get_current_user),
 ):
     """Check if the current user is a member of the community."""
-    comm_result = await db.execute(select(Community).where(Community.name == community_name))
+    comm_result = await db.execute(
+        select(Community).where(Community.name == community_name)
+    )
     community = comm_result.scalar_one_or_none()
     if not community:
         raise HTTPException(status_code=404, detail="Community not found")

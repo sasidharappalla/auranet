@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -57,7 +57,9 @@ async def vote_on_post(
 
     # Recalculate post score
     score_result = await db.execute(
-        select(func.coalesce(func.sum(Vote.vote_direction), 0)).where(Vote.post_id == post_id)
+        select(func.coalesce(func.sum(Vote.vote_direction), 0)).where(
+            Vote.post_id == post_id
+        )
     )
     new_score = score_result.scalar()
     post.score = new_score

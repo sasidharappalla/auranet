@@ -1,14 +1,17 @@
 """User profile endpoints — public profiles, stats, and settings."""
 
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models import User, Post, Comment
-from app.schemas import UserProfileResponse, UserUpdateRequest, PasswordChangeRequest, UserResponse
+from app.schemas import (
+    UserProfileResponse,
+    UserUpdateRequest,
+    PasswordChangeRequest,
+    UserResponse,
+)
 from app.auth import get_current_user, hash_password, verify_password
 
 router = APIRouter(prefix="/api/profile", tags=["profile"])
@@ -29,7 +32,9 @@ async def get_user_profile(username: str, db: AsyncSession = Depends(get_db)):
     post_count = post_count_result.scalar() or 0
 
     comment_count_result = await db.execute(
-        select(func.count()).where(Comment.user_id == user.id, Comment.is_deleted == False)
+        select(func.count()).where(
+            Comment.user_id == user.id, Comment.is_deleted == False
+        )
     )
     comment_count = comment_count_result.scalar() or 0
 
@@ -75,25 +80,49 @@ async def get_user_posts(
 
     response = []
     for post in posts:
-        comm_result = await db.execute(select(Community).where(Community.id == post.community_id))
+        comm_result = await db.execute(
+            select(Community).where(Community.id == post.community_id)
+        )
         community = comm_result.scalar_one_or_none()
 
-        up = await db.execute(select(func.count()).where(Vote.post_id == post.id, Vote.vote_direction == 1))
-        down = await db.execute(select(func.count()).where(Vote.post_id == post.id, Vote.vote_direction == -1))
+        up = await db.execute(
+            select(func.count()).where(
+                Vote.post_id == post.id, Vote.vote_direction == 1
+            )
+        )
+        down = await db.execute(
+            select(func.count()).where(
+                Vote.post_id == post.id, Vote.vote_direction == -1
+            )
+        )
         cc = await db.execute(select(func.count()).where(Comment.post_id == post.id))
 
-        response.append(PostResponse(
-            id=post.id, title=post.title, body=post.body, image_url=post.image_url,
-            ai_roast=post.ai_roast, ai_status=post.ai_status, score=post.score,
-            is_nsfw=post.is_nsfw, is_spoiler=post.is_spoiler, is_locked=post.is_locked,
-            is_pinned=post.is_pinned, flair=post.flair,
-            created_at=post.created_at, updated_at=post.updated_at,
-            author_username=user.username, author_avatar=user.avatar_url,
-            community_name=community.name if community else None,
-            community_id=post.community_id, user_id=post.user_id,
-            upvotes=up.scalar() or 0, downvotes=down.scalar() or 0,
-            comment_count=cc.scalar() or 0,
-        ))
+        response.append(
+            PostResponse(
+                id=post.id,
+                title=post.title,
+                body=post.body,
+                image_url=post.image_url,
+                ai_roast=post.ai_roast,
+                ai_status=post.ai_status,
+                score=post.score,
+                is_nsfw=post.is_nsfw,
+                is_spoiler=post.is_spoiler,
+                is_locked=post.is_locked,
+                is_pinned=post.is_pinned,
+                flair=post.flair,
+                created_at=post.created_at,
+                updated_at=post.updated_at,
+                author_username=user.username,
+                author_avatar=user.avatar_url,
+                community_name=community.name if community else None,
+                community_id=post.community_id,
+                user_id=post.user_id,
+                upvotes=up.scalar() or 0,
+                downvotes=down.scalar() or 0,
+                comment_count=cc.scalar() or 0,
+            )
+        )
 
     return response
 

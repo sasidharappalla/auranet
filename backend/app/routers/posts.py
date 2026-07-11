@@ -7,9 +7,9 @@ from sqlalchemy import select, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Post, Vote, Comment, User, Community, SavedPost
+from app.models import Post, Vote, Comment, User, Community
 from app.schemas import PostResponse
-from app.auth import get_current_user, get_current_user_optional
+from app.auth import get_current_user
 from app.services.minio_service import upload_image
 from app.services.rabbitmq_service import publish_post_created
 
@@ -19,11 +19,17 @@ router = APIRouter(prefix="/api/posts", tags=["posts"])
 def _row_to_post(r) -> PostResponse:
     """Convert a hot_posts view row (RowMapping) to a PostResponse."""
     return PostResponse(
-        id=r["id"], title=r["title"], body=r["body"],
-        image_url=r.get("image_url"), ai_roast=r.get("ai_roast"),
-        ai_status=r.get("ai_status", "none"), score=r.get("score", 0),
-        is_nsfw=r.get("is_nsfw", False), is_spoiler=r.get("is_spoiler", False),
-        is_locked=r.get("is_locked", False), is_pinned=r.get("is_pinned", False),
+        id=r["id"],
+        title=r["title"],
+        body=r["body"],
+        image_url=r.get("image_url"),
+        ai_roast=r.get("ai_roast"),
+        ai_status=r.get("ai_status", "none"),
+        score=r.get("score", 0),
+        is_nsfw=r.get("is_nsfw", False),
+        is_spoiler=r.get("is_spoiler", False),
+        is_locked=r.get("is_locked", False),
+        is_pinned=r.get("is_pinned", False),
         flair=r.get("flair"),
         created_at=r["created_at"],
         updated_at=r.get("updated_at"),
@@ -32,12 +38,22 @@ def _row_to_post(r) -> PostResponse:
         community_name=r.get("community_name"),
         community_id=r.get("community_id"),
         user_id=r.get("user_id"),
-        upvotes=r.get("upvotes", 0), downvotes=r.get("downvotes", 0),
+        upvotes=r.get("upvotes", 0),
+        downvotes=r.get("downvotes", 0),
         comment_count=r.get("comment_count", 0),
     )
 
 
-def _build_post_response(post, author, community, upvotes, downvotes, comment_count, user_vote=None, is_saved=False):
+def _build_post_response(
+    post,
+    author,
+    community,
+    upvotes,
+    downvotes,
+    comment_count,
+    user_vote=None,
+    is_saved=False,
+):
     return PostResponse(
         id=post.id,
         title=post.title,
@@ -79,7 +95,9 @@ async def create_post(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new post with optional image upload. Publishes to RabbitMQ for AI processing."""
-    comm_result = await db.execute(select(Community).where(Community.id == UUID(community_id)))
+    comm_result = await db.execute(
+        select(Community).where(Community.id == UUID(community_id))
+    )
     community = comm_result.scalar_one_or_none()
     if not community:
         raise HTTPException(status_code=404, detail="Community not found")
@@ -122,8 +140,12 @@ async def get_hot_posts(
 ):
     """Fetch the hot-ranked feed using the time-decay algorithm."""
     if community:
-        query = text("SELECT * FROM hot_posts WHERE community_name = :community LIMIT :limit OFFSET :offset")
-        result = await db.execute(query, {"community": community, "limit": limit, "offset": offset})
+        query = text(
+            "SELECT * FROM hot_posts WHERE community_name = :community LIMIT :limit OFFSET :offset"
+        )
+        result = await db.execute(
+            query, {"community": community, "limit": limit, "offset": offset}
+        )
     else:
         query = text("SELECT * FROM hot_posts LIMIT :limit OFFSET :offset")
         result = await db.execute(query, {"limit": limit, "offset": offset})
@@ -141,10 +163,16 @@ async def get_new_posts(
 ):
     """Fetch posts sorted by newest first."""
     if community:
-        query = text("SELECT * FROM hot_posts WHERE community_name = :community ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
-        result = await db.execute(query, {"community": community, "limit": limit, "offset": offset})
+        query = text(
+            "SELECT * FROM hot_posts WHERE community_name = :community ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+        )
+        result = await db.execute(
+            query, {"community": community, "limit": limit, "offset": offset}
+        )
     else:
-        query = text("SELECT * FROM hot_posts ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+        query = text(
+            "SELECT * FROM hot_posts ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+        )
         result = await db.execute(query, {"limit": limit, "offset": offset})
     rows = result.mappings().all()
 
@@ -154,7 +182,9 @@ async def get_new_posts(
 @router.get("/{post_id}", response_model=PostResponse)
 async def get_post(post_id: UUID, db: AsyncSession = Depends(get_db)):
     """Fetch a single post by ID with vote and comment counts."""
-    result = await db.execute(select(Post).where(Post.id == post_id, Post.is_deleted == False))
+    result = await db.execute(
+        select(Post).where(Post.id == post_id, Post.is_deleted == False)
+    )
     post = result.scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -162,7 +192,9 @@ async def get_post(post_id: UUID, db: AsyncSession = Depends(get_db)):
     author_result = await db.execute(select(User).where(User.id == post.user_id))
     author = author_result.scalar_one_or_none()
 
-    comm_result = await db.execute(select(Community).where(Community.id == post.community_id))
+    comm_result = await db.execute(
+        select(Community).where(Community.id == post.community_id)
+    )
     community = comm_result.scalar_one_or_none()
 
     up_result = await db.execute(
@@ -180,7 +212,9 @@ async def get_post(post_id: UUID, db: AsyncSession = Depends(get_db)):
     )
     comment_count = comment_result.scalar()
 
-    return _build_post_response(post, author, community, upvotes, downvotes, comment_count)
+    return _build_post_response(
+        post, author, community, upvotes, downvotes, comment_count
+    )
 
 
 @router.delete("/{post_id}")
@@ -194,7 +228,10 @@ async def delete_post(
     post = result.scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    if post.user_id != current_user.id and current_user.role not in ("admin", "moderator"):
+    if post.user_id != current_user.id and current_user.role not in (
+        "admin",
+        "moderator",
+    ):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     post.is_deleted = True

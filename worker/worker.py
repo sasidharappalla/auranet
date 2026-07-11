@@ -23,17 +23,25 @@ from minio import Minio
 
 # ── Configuration ──────────────────────────────────────────
 
-RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://auranet:auranet_secret@rabbitmq:5672/")
+
+def required_env(name: str) -> str:
+    value = os.getenv(name)
+    if not value:
+        raise RuntimeError(f"{name} must be set")
+    return value
+
+
+RABBITMQ_URL = required_env("RABBITMQ_URL")
 QUEUE_NAME = "post_created"
 
-DB_DSN = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://auranet:auranet_secret@db:5432/auranet"
-).replace("postgresql+asyncpg://", "postgresql://")
+DB_DSN = required_env("DATABASE_URL").replace(
+    "postgresql+asyncpg://",
+    "postgresql://",
+)
 
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
-MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
-MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin123")
+MINIO_ACCESS_KEY = required_env("MINIO_ACCESS_KEY")
+MINIO_SECRET_KEY = required_env("MINIO_SECRET_KEY")
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "auranet-media")
 
 AI_PROVIDER = os.getenv("AI_PROVIDER", "mock")
@@ -70,8 +78,20 @@ def analyze_image_mock(image_data: bytes) -> dict:
         "aura_score": random.randint(15, 99),
         "roast": random.choice(ROASTS),
         "tags": random.sample(
-            ["cozy", "chaotic", "minimalist", "maximalist", "retro", "futuristic",
-             "cottagecore", "cyberpunk", "clean", "unhinged", "aesthetic", "mid"],
+            [
+                "cozy",
+                "chaotic",
+                "minimalist",
+                "maximalist",
+                "retro",
+                "futuristic",
+                "cottagecore",
+                "cyberpunk",
+                "clean",
+                "unhinged",
+                "aesthetic",
+                "mid",
+            ],
             k=random.randint(2, 4),
         ),
         "provider": "mock",
@@ -96,6 +116,7 @@ def analyze_image(image_data: bytes) -> dict:
 
 
 # ── Database Update ────────────────────────────────────────
+
 
 def set_ai_status(post_id: str, status: str):
     """Set the ai_status field on a post."""
@@ -127,6 +148,7 @@ def update_post_ai_roast(post_id: str, ai_roast: dict):
 
 # ── Download Image from MinIO ──────────────────────────────
 
+
 def download_image(image_url: str) -> bytes:
     """Download image bytes from MinIO given the public URL."""
     # Extract the object path from the URL
@@ -145,6 +167,7 @@ def download_image(image_url: str) -> bytes:
 
 # ── RabbitMQ Consumer ──────────────────────────────────────
 
+
 def on_message(channel, method, properties, body):
     """Callback for each message from the post_created queue."""
     try:
@@ -158,15 +181,15 @@ def on_message(channel, method, properties, body):
         set_ai_status(post_id, "processing")
 
         # Step 1: Download image from MinIO
-        print(f"  ⬇️  Downloading image...")
+        print("  ⬇️  Downloading image...")
         image_data = download_image(image_url)
 
         # Step 2: Analyze with AI
-        print(f"  🤖 Analyzing image...")
+        print("  🤖 Analyzing image...")
         ai_result = analyze_image(image_data)
 
         # Step 3: Update PostgreSQL
-        print(f"  💾 Saving results...")
+        print("  💾 Saving results...")
         update_post_ai_roast(post_id, ai_result)
 
         # Step 4: Acknowledge the message
